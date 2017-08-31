@@ -1,0 +1,3 @@
+/mnt/c/UDACITY/TERM2/carnd2-proj5/lessons/mpc_to_line/build/CMakeFiles/edit_cache.dir
+/mnt/c/UDACITY/TERM2/carnd2-proj5/lessons/mpc_to_line/build/CMakeFiles/rebuild_cache.dir
+/mnt/c/UDACITY/TERM2/carnd2-proj5/lessons/mpc_to_line/build/CMakeFiles/mpc.dir
