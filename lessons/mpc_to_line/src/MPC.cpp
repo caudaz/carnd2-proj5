@@ -86,7 +86,9 @@ class FG_eval {
 
     // Minimize the value gap between sequential actuations
     for (int t = 0; t < N - 2; t++){
-        fg[0] += CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
+		// tune the steering rate cost function for smooth steering and pleasant ride
+		// use 1 or 100 or 500 multiplying factor
+        fg[0] += 500 * CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
 		fg[0] += CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
     }	
 	
@@ -107,23 +109,47 @@ class FG_eval {
     fg[1 + cte_start] = vars[cte_start];
     fg[1 + epsi_start] = vars[epsi_start];
 
+    // Here's `x` to get you started.
+    // The idea here is to constraint this value to be 0.
+    //
+    // NOTE: The use of `AD<double>` and use of `CppAD`!
+    // This is also CppAD can compute derivatives and pass
+    // these to the solver.	
+	
     // The rest of the constraints
     for (int t = 1; t < N; t++) {
-      AD<double> x1 = vars[x_start + t];
-
-      AD<double> x0 = vars[x_start + t - 1];
-      AD<double> psi0 = vars[psi_start + t - 1];
-      AD<double> v0 = vars[v_start + t - 1];
-
-      // Here's `x` to get you started.
-      // The idea here is to constraint this value to be 0.
-      //
-      // NOTE: The use of `AD<double>` and use of `CppAD`!
-      // This is also CppAD can compute derivatives and pass
-      // these to the solver.
+	  //state at time t+1	
+      AD<double> x1    = vars[x_start    + t];
+      AD<double> y1    = vars[y_start    + t];	  
+      AD<double> psi1  = vars[psi_start  + t];	
+      AD<double> v1    = vars[v_start    + t];	
+      AD<double> cte1  = vars[cte_start  + t];	
+      AD<double> epsi1 = vars[epsi_start + t];
+	  
+	  // state at time t	
+      AD<double> x0    = vars[x_start    + t - 1];
+      AD<double> y0    = vars[y_start    + t - 1];	  
+      AD<double> psi0  = vars[psi_start  + t - 1];	
+      AD<double> v0    = vars[v_start    + t - 1];	
+      AD<double> cte0  = vars[cte_start  + t - 1];	
+      AD<double> epsi0 = vars[epsi_start + t - 1];
+	  
+	  // Actuators only at time t
+	  AD<double> delta0 = vars[delta_start + t - 1];
+	  AD<double> a0     = vars[a_start     + t - 1];
+	  
+	  // f(xt)
+	  AD<double> f0 = coeffs[0] + coeffs[1] * x0;
+	  // desired psi ( not know yet, therefore use the derivative of f(xt) )
+	  AD<double> psides0 = CppAD::atan(coeffs[1]);
 
       // TODO: Setup the rest of the model constraints
-      fg[1 + x_start + t] = x1 - (x0 + v0 * CppAD::cos(psi0) * dt);
+      fg[1 + x_start    + t] = x1    - (x0 + v0 * CppAD::cos(psi0) * dt);
+	  fg[1 + y_start    + t] = y1    - (y0 + v0 * CppAD::sin(psi0) * dt);
+      fg[1 + psi_start  + t] = psi1  - (psi0 + v0 * delta0 / Lf * dt);
+      fg[1 + v_start    + t] = v1    - (v0 + a0 * dt);
+      fg[1 + cte_start  + t] = cte1  - ((f0 - y0) + (v0 * CppAD::sin(epsi0) * dt));
+      fg[1 + epsi_start + t] = epsi1 - ((psi0 - psides0) + v0 * delta0 / Lf * dt);
     }
   }
 };
@@ -139,11 +165,11 @@ vector<double> MPC::Solve(Eigen::VectorXd x0, Eigen::VectorXd coeffs) {
   size_t i;
   typedef CPPAD_TESTVECTOR(double) Dvector;
 
-  double x = x0[0];
-  double y = x0[1];
-  double psi = x0[2];
-  double v = x0[3];
-  double cte = x0[4];
+  double x    = x0[0];
+  double y    = x0[1];
+  double psi  = x0[2];
+  double v    = x0[3];
+  double cte  = x0[4];
   double epsi = x0[5];
 
   // number of independent variables
@@ -293,17 +319,21 @@ int main() {
   ptsy << -1, -1;
 
   // TODO: fit a polynomial to the above x and y coordinates
-  auto coeffs = ? ;
+  auto coeffs = polyfit(ptsx, ptsy, 1);
 
   // NOTE: free feel to play around with these
   double x = -1;
   double y = 10;
   double psi = 0;
   double v = 10;
+  
   // TODO: calculate the cross track error
-  double cte = ? ;
+  double cte = polyeval(coeffs, x) - y;
+  
   // TODO: calculate the orientation error
-  double epsi = ? ;
+  // sign starts at 0, the orientation error is -f'(x)
+  // the derivative of coeffs[0] + coeffs[1] * x  is  coeffs[1]
+  double epsi = psi - atan(coeffs[1]);
 
   Eigen::VectorXd state(6);
   state << x, y, psi, v, cte, epsi;
@@ -344,6 +374,17 @@ int main() {
     std::cout << std::endl;
   }
 
+  // save results to file
+  std::ofstream f;
+  f.open("./data.csv", std::ofstream::out | std::ofstream::trunc);
+  f         << "i" << "," << "cte_vals" << "," << "delta_vals" << "," << "v_vals" << '\n';
+  std::cout << "i" << "," << "cte_vals" << "," << "delta_vals" << "," << "v_vals" << '\n';
+  for(int i = 0; i < cte_vals.size(); ++i) {
+      f         << i << "," << cte_vals[i] << "," << delta_vals[i] << "," << v_vals[i] << '\n';
+	  std::cout << i << "," << cte_vals[i] << "," << delta_vals[i] << "," << v_vals[i] << '\n';
+  }  
+  f.close();
+  
   // Plot values
   // NOTE: feel free to play around with this.
   // It's useful for debugging!
@@ -356,6 +397,7 @@ int main() {
   plt::subplot(3, 1, 3);
   plt::title("Velocity");
   plt::plot(v_vals);
-
+  
+  //plt::save("./basic.png");
   plt::show();
 }
