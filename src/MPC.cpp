@@ -12,7 +12,6 @@
 // 4>sudo bash install_ipopt.sh Ipopt-3.12.7    (takes about 10min)
 #include <cppad/ipopt/solve.hpp>
 
-
 using CppAD::AD;
 
 // TODO: Set the timestep length and duration
@@ -61,15 +60,15 @@ class FG_eval {
 	
 	// Minimize cost for reference state variables
 	for (int t = 0; t < N; t++){
-		fg[0] += CppAD::pow(vars[cte_start + t], 2);
-		fg[0] += CppAD::pow(vars[epsi_start + t], 2);
-		fg[0] += CppAD::pow(vars[v_start + t] - ref_v, 2);
+		fg[0] += 1 * CppAD::pow(vars[cte_start + t], 2);
+		fg[0] += 1 * CppAD::pow(vars[epsi_start + t], 2);
+		fg[0] += 1 * CppAD::pow(vars[v_start + t] - ref_v, 2);
 	}
 	
     // Minimize cost for actuator variables
     for (int t = 0; t < N -1; t++){
-        fg[0] += CppAD::pow(vars[delta_start + t], 2);
-        fg[0] += CppAD::pow(vars[a_start + t], 2);
+        fg[0] += 1 * CppAD::pow(vars[delta_start + t], 2);
+        fg[0] += 1 * CppAD::pow(vars[a_start + t], 2);
     }
 
     // Minimize the value gap between sequential actuations
@@ -77,7 +76,7 @@ class FG_eval {
 		// tune the steering rate cost function for smooth steering and pleasant ride
 		// use 1 or 100 or 500 multiplying factor
         fg[0] += 500 * CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
-		fg[0] += CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
+		fg[0] +=   1 * CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
     }	
 
     //
@@ -175,11 +174,11 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   }
 
   // Set the initial variable values
-  vars[x_start] = x;
-  vars[y_start] = y;
-  vars[psi_start] = psi;
-  vars[v_start] = v;
-  vars[cte_start] = cte;
+  vars[x_start]    = x;
+  vars[y_start]    = y;
+  vars[psi_start]  = psi;
+  vars[v_start]    = v;
+  vars[cte_start]  = cte;
   vars[epsi_start] = epsi;    
   
   Dvector vars_lowerbound(n_vars);
@@ -190,7 +189,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // to the max negative and positive values.
   for (int i = 0; i < delta_start; i++) {
     vars_lowerbound[i] = -1.0e19;
-    vars_upperbound[i] = 1.0e19;
+    vars_upperbound[i] = +1.0e19;
   }
 
   // The upper and lower limits of delta are set to -25 and 25
@@ -198,14 +197,14 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // NOTE: Feel free to change this to something else.
   for (int i = delta_start; i < a_start; i++) {
     vars_lowerbound[i] = -0.436332;
-    vars_upperbound[i] = 0.436332;
+    vars_upperbound[i] = +0.436332;
   }
 
   // Acceleration/decceleration upper and lower limits.
   // NOTE: Feel free to change this to something else.
   for (int i = a_start; i < n_vars; i++) {
     vars_lowerbound[i] = -1.0;
-    vars_upperbound[i] = 1.0;
+    vars_upperbound[i] = +1.0;
   }
   
   // Lower and upper limits for the constraints
@@ -268,22 +267,16 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // Cost
   auto cost = solution.obj_value;
   std::cout << "Cost " << cost << std::endl;
-
-  // TODO: Return the first actuator values. The variables can be accessed with
-  // `solution.x[i]`.
-  //
-  // {...} is shorthand for creating a vector, so auto x1 = {1.0,2.0}
-  // creates a 2 element double vector.
   
   vector<double> sol;
   sol.push_back(solution.x[delta_start]);
   sol.push_back(solution.x[a_start]);
+  // send trajectory
   for (int i = 0; i < N; ++i) {
     sol.push_back(solution.x[x_start + i]);
     sol.push_back(solution.x[y_start + i]);
   }
   
   return sol;
-  
   
 }

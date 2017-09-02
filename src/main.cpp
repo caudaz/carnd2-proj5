@@ -116,11 +116,12 @@ int main() {
           double cte = polyeval(coeffs, 0);
           // PSI-error simplified since px = 0 psi=0 after transform
           double epsi = -atan(coeffs[1]);
-          // state
+
+/*           // state
           Eigen::VectorXd state(6);
-          state << 0.0, 0.0, 0.0, v, cte, epsi;		  
+          state << 0.0, 0.0, 0.0, v, cte, epsi;	 */	  
 		  
-/* 	      // This is the length from front to CoG that has a similar radius.
+	      // This is the length from front to CoG that has a similar radius.
 		  const double Lf = 2.67;
           // Latency delay
           const double dt = 0.1;		  
@@ -135,12 +136,12 @@ int main() {
           double p_epsi = epsi + v * -delta / Lf * dt;
           // State values - predicted after latency
           Eigen::VectorXd state(6);
-          state << p_px, p_py, p_psi, p_v, p_cte, p_epsi; */
+          state << p_px, p_py, p_psi, p_v, p_cte, p_epsi;
 		  
           // Solve for steer and accel actuations
           auto sol = mpc.Solve(state,coeffs);  
-		  const double Lf = 2.67;
-		  double steer_value    = sol[0] / (deg2rad(25) * Lf) * -1; // delta positive rotates CCW or turn left
+		  //const double Lf = 2.67;
+		  double steer_value    = sol[0] / (deg2rad(25) * 1.0) * -1; // delta positive rotates CCW or turn left
 		  double throttle_value = sol[1];
 		  
           json msgJson;
@@ -166,10 +167,6 @@ int main() {
           vector<double> next_y_vals;
 		  double poly_inc   = 0.5;
 		  int    num_points = 25;
-/* 		  for (int i = 1; i < num_points; i++){
-			  next_x_vals.push_back(poly_inc * 1);
-			  next_y_vals.push_back(polyeval(coeffs, poly_inc * 1));
-		  } */
 		  for(int i = 0; i<ptsx_car.size();i++){
             next_x_vals.push_back(ptsx_car[i]);
             next_y_vals.push_back(ptsy_car[i]);
