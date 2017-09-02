@@ -117,11 +117,11 @@ int main() {
           // PSI-error simplified since px = 0 psi=0 after transform
           double epsi = -atan(coeffs[1]);
 
-/*           // state
+          // state
           Eigen::VectorXd state(6);
-          state << 0.0, 0.0, 0.0, v, cte, epsi;	 */	  
+          state << 0.0, 0.0, 0.0, v, cte, epsi;		  
 		  
-	      // This is the length from front to CoG that has a similar radius.
+/* 	      // This is the length from front to CoG that has a similar radius.
 		  const double Lf = 2.67;
           // Latency delay
           const double dt = 0.1;		  
@@ -136,7 +136,7 @@ int main() {
           double p_epsi = epsi + v * -delta / Lf * dt;
           // State values - predicted after latency
           Eigen::VectorXd state(6);
-          state << p_px, p_py, p_psi, p_v, p_cte, p_epsi;
+          state << p_px, p_py, p_psi, p_v, p_cte, p_epsi; */
 		  
           // Solve for steer and accel actuations
           auto sol = mpc.Solve(state,coeffs);  
@@ -185,7 +185,7 @@ int main() {
           //
           // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
-          this_thread::sleep_for(chrono::milliseconds(100));
+          this_thread::sleep_for(chrono::milliseconds(25));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {
