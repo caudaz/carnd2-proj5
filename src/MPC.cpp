@@ -75,8 +75,8 @@ class FG_eval {
     for (int t = 0; t < N - 2; t++){
 		// tune the steering rate cost function for smooth steering and pleasant ride
 		// use 1 or 100 or 500 multiplying factor
-        fg[0] += 500 * CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
-		fg[0] +=   1 * CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
+        fg[0] += 5000 * CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
+		fg[0] +=    1 * CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
     }	
 
     //
