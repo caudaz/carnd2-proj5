@@ -1,18 +1,17 @@
-**Self-Driving Car Engineer Nanodegree**
+# **Self-Driving Car Engineer Nanodegree**
 
-**Term2 – Project5: Model Predictive Control (MPC)**
+# **Term2 – Project5: Model Predictive Control (MPC)** #
 
-![](./media/image1.png){width="6.645449475065617in"
-height="3.813953412073491in"}
+![](./media/image1.png)
 
-**INTRODUCTION**
+## **INTRODUCTION** ##
 
 The purpose of the project is to implement Model Predictive Control
 (MPC) for UDACITY’s car simulator. The path waypoints are given by the
 simulator depending on the location of the vehicle and there is 100msec
 latency between actuation commands (besides connection latency).
 
-**Model Predictive Control (MPC)**
+## **Model Predictive Control (MPC)** ##
 
 MPC is an optimization problem, for this project solves the optimal
 trajectory. It involves simulating different actuator inputs to predict
@@ -28,7 +27,7 @@ set of actuation commands. The rest of the actuation set is thrown away.
 Take the new state and use it to calculate a new optimal trajectory
 again. The solver used is IPOPT.
 
-**MPC implementation **
+## **MPC implementation ** ##
 
 1.  The simulator gives us the current state of the vehicle:
 
@@ -42,7 +41,7 @@ again. The solver used is IPOPT.
 
     ptsy\_car\[i\] = x \* sin(-psi) + y \* cos(-psi);
 
-A third order polynomial fit is done:
+2. A third order polynomial fit is done:
 
 auto coeffs = polyfit(ptsx\_car, ptsy\_car, 3);
 
@@ -82,7 +81,7 @@ double steer\_value = sol\[0\] / (deg2rad(25) \* 1.0) \* -1;
 
 double throttle\_value = sol\[1\];
 
-**FG\_eval class **
+## **FG\_eval class ** ##
 
 Defined in MPC.cpp, builds the vector ‘fg’ with the cost constraints. It
 uses the equations of motion, the polynomial fit coefficients, and the
@@ -170,7 +169,7 @@ Lf \* dt);
 
 }
 
-**MPC::solve method **
+## **MPC::solve method ** ##
 
 Defined in MPC.cpp. Defines vars, lower/upper bounds for vars and
 constrains:
@@ -305,7 +304,7 @@ constraints\_lowerbound,
 
 constraints\_upperbound, fg\_eval, solution);
 
-**Conclusions**
+## **Conclusions** ##
 
 -   The MPC was implemented for going around the track at a speed
     of 40MPH. The only constraint weight that was changed was the steer
