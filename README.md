@@ -305,8 +305,6 @@ constraints\_lowerbound,
 
 constraints\_upperbound, fg\_eval, solution);
 
-**Putting it all together in a flowchart**
-
 **Conclusions**
 
 -   The MPC was implemented for going around the track at a speed
