@@ -110,14 +110,16 @@ int main() {
 		  // Latency in milisecs
 		  int latency = 100;
 
-/*           // CTE simplified since py = 0  after transform
+/* 		  // NO LATENCY STATE
+          // CTE simplified since py = 0  after transform
           double cte = polyeval(coeffs, 0);
           // PSI-error simplified since px = 0 psi=0 after transform
           double epsi = -atan(coeffs[1]);
           // State		  
 		  Eigen::VectorXd state(6);
-		  state << 0.0, 0.0, 0.0, v, cte, epsi; 	 */		  
-		  
+		  state << 0.0, 0.0, 0.0, v, cte, epsi;  */			  
+
+          // LATENCY STATE		  
 	      // This is the length from front to CoG that has a similar radius.
 		  const double Lf = 2.67;
           // Latency delay
