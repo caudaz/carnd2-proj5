@@ -87,23 +87,17 @@ int main() {
           // j[1] is the data JSON object
           vector<double> ptsx = j[1]["ptsx"];
           vector<double> ptsy = j[1]["ptsy"];
-          double px  = j[1]["x"];
-          double py  = j[1]["y"];
-          double psi = j[1]["psi"];
-          double v   = j[1]["speed"];
-
-		  double psi_unity = j[1]["psi_unity"]; // unused variable
+          double px        = j[1]["x"];
+          double py        = j[1]["y"];
+          double psi       = j[1]["psi"];
+          double v         = j[1]["speed"];
           double delta     = j[1]["steering_angle"]; 		  
-		  double a         = j[1]["throttle"];		  
+		  double a         = j[1]["throttle"];
 		  
-          /*
-          * TODO: Calculate steering angle and throttle using MPC.
-          */
-
           // Transform waypoints from global to car's C.S.
 		  Eigen::VectorXd ptsx_car(ptsx.size());
           Eigen::VectorXd ptsy_car(ptsy.size());  
-          for (int i = 0; i < ptsx.size(); i++) {
+          for (unsigned int i = 0; i < ptsx.size(); i++) {
             double x = ptsx[i] - px;
             double y = ptsy[i] - py;
             ptsx_car[i] = x * cos(-psi) - y * sin(-psi);
@@ -112,31 +106,36 @@ int main() {
 		  
           // Waypoints 3rd order fit
           auto coeffs = polyfit(ptsx_car, ptsy_car, 3);
-          // CTE simplified since py = 0  after transform
+
+		  // Latency in milisecs
+		  int latency = 100;
+
+/*           // CTE simplified since py = 0  after transform
           double cte = polyeval(coeffs, 0);
           // PSI-error simplified since px = 0 psi=0 after transform
           double epsi = -atan(coeffs[1]);
-
-          // state
-          Eigen::VectorXd state(6);
-          state << 0.0, 0.0, 0.0, v, cte, epsi;		  
+          // State		  
+		  Eigen::VectorXd state(6);
+		  state << 0.0, 0.0, 0.0, v, cte, epsi; 	 */		  
 		  
-/* 	      // This is the length from front to CoG that has a similar radius.
+	      // This is the length from front to CoG that has a similar radius.
 		  const double Lf = 2.67;
           // Latency delay
-          const double dt = 0.1;		  
+          const double dt = latency / 1000.0;		  
           // Latency - predict state
 		  // After transform psi is 0 => cos(0)=1 and sin(0)=0
 		  // simplifies p_px, p_py and p_psi predictions
           double p_px   = 0.0 + 1.0 * v * dt;
-          double p_py   = 0.0 + 0.0 * v * dt;
-          double p_psi  = 0.0 + v * -delta / Lf * dt;
+          double p_py   = 0.0 + 0.0 * v * dt; // will be 0.0
+          double p_psi  = 0.0 - v * (delta * deg2rad(25)) / Lf * dt;
           double p_v    = v + a * dt;
-          double p_cte  = cte + v * sin(epsi) * dt;
-          double p_epsi = epsi + v * -delta / Lf * dt;
+          //double p_cte  = cte + v * sin(epsi) * dt;
+		  double p_cte  = polyeval(coeffs, p_px);
+          //double p_epsi = epsi + v * -delta / Lf * dt;
+		  double p_epsi = atan(2*coeffs[2]*p_px + coeffs[1]);
           // State values - predicted after latency
           Eigen::VectorXd state(6);
-          state << p_px, p_py, p_psi, p_v, p_cte, p_epsi; */
+          state << p_px, p_py, p_psi, p_v, p_cte, p_epsi;
 		  
           // Solve for steer and accel actuations
           auto sol = mpc.Solve(state,coeffs);  
@@ -154,7 +153,7 @@ int main() {
 		  // points are in reference to the vehicle's coordinate system
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
-		  for (int i = 2; i < sol.size(); i+=2) {
+		  for (unsigned int i = 2; i < sol.size(); i+=2) {
             mpc_x_vals.push_back(sol[i]);
             mpc_y_vals.push_back(sol[i+1]);
           }
@@ -165,8 +164,6 @@ int main() {
           // points are in reference to the vehicle's coordinate system
           vector<double> next_x_vals;
           vector<double> next_y_vals;
-		  double poly_inc   = 0.5;
-		  int    num_points = 25;
 		  for(int i = 0; i<ptsx_car.size();i++){
             next_x_vals.push_back(ptsx_car[i]);
             next_y_vals.push_back(ptsy_car[i]);
@@ -185,7 +182,7 @@ int main() {
           //
           // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
-          this_thread::sleep_for(chrono::milliseconds(100));
+          this_thread::sleep_for(chrono::milliseconds(latency));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {
