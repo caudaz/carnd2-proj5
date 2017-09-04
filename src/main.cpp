@@ -94,7 +94,7 @@ int main() {
           double delta     = j[1]["steering_angle"]; 		  
 		  double a         = j[1]["throttle"];
 		  
-          // Transform waypoints from global to car's C.S.
+          // Waypoints TRANSFORM from Global to Car C.S.
 		  Eigen::VectorXd ptsx_car(ptsx.size());
           Eigen::VectorXd ptsy_car(ptsy.size());  
           for (unsigned int i = 0; i < ptsx.size(); i++) {
@@ -107,42 +107,38 @@ int main() {
           // Waypoints 3rd order fit
           auto coeffs = polyfit(ptsx_car, ptsy_car, 3);
 
-		  // Latency in milisecs
+          const double Lf = 2.67;
+		  
+		  // Latency in milisecs and secs
 		  int latency = 100;
+          const double dt = latency / 1000.0; 
+		  
+		  // TIME = 0 (after transform)
+		  px = 0;
+		  py = 0;
+		  psi = 0;
+          // CTE = desired_y - actual_y 
+		  //     = polyeval(coeffs, px) - py  
+          double cte = polyeval(coeffs, 0); // py = 0 after transform
+          // PSI-error = actual psi - desired psi
+		  //           = psi - atan(3*coeffs[3]*px*px+2*coeffs[2]*px+coeffs[1])
+          double epsi = -atan(coeffs[1]); // px = 0 psi=0 after transform		  
 
-/* 		  // NO LATENCY STATE
-          // CTE simplified since py = 0  after transform
-          double cte = polyeval(coeffs, 0);
-          // PSI-error simplified since px = 0 psi=0 after transform
-          double epsi = -atan(coeffs[1]);
-          // State		  
-		  Eigen::VectorXd state(6);
-		  state << 0.0, 0.0, 0.0, v, cte, epsi;  */			  
+          // TIME = 0 + LATENCY(dt)	 
+          px   = px + v * cos(psi) * dt;
+          py   = py + v * sin(psi) * dt;
+          psi  = psi +  v * (-delta) / Lf * dt; //delta is negative, since simulator left turn is negative
+		  epsi = epsi + psi;
+		  cte  = cte + v * sin(epsi) * dt;
+		  v    = v + a * dt;
 
-          // LATENCY STATE		  
-	      // This is the length from front to CoG that has a similar radius.
-		  const double Lf = 2.67;
-          // Latency delay
-          const double dt = latency / 1000.0;		  
-          // Latency - predict state
-		  // After transform psi is 0 => cos(0)=1 and sin(0)=0
-		  // simplifies p_px, p_py and p_psi predictions
-          double p_px   = 0.0 + 1.0 * v * dt;
-          double p_py   = 0.0 + 0.0 * v * dt; // will be 0.0
-          double p_psi  = 0.0 - v * (delta * deg2rad(25)) / Lf * dt;
-          double p_v    = v + a * dt;
-          //double p_cte  = cte + v * sin(epsi) * dt;
-		  double p_cte  = polyeval(coeffs, p_px);
-          //double p_epsi = epsi + v * -delta / Lf * dt;
-		  double p_epsi = atan(2*coeffs[2]*p_px + coeffs[1]);
-          // State values - predicted after latency
+          // State values 
           Eigen::VectorXd state(6);
-          state << p_px, p_py, p_psi, p_v, p_cte, p_epsi;
+          state << px, py, psi, v, cte, epsi;
 		  
           // Solve for steer and accel actuations
           auto sol = mpc.Solve(state,coeffs);  
-		  //const double Lf = 2.67;
-		  double steer_value    = sol[0] / (deg2rad(25) * 1.0) * -1; // delta positive rotates CCW or turn left
+		  double steer_value    = -sol[0] / deg2rad(25); // neg sign because delta positive rotates CCW or turn left
 		  double throttle_value = sol[1];
 		  
           json msgJson;
