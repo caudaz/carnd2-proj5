@@ -91,11 +91,11 @@ int main() {
           double py        = j[1]["y"];
           double psi       = j[1]["psi"];
           double v         = j[1]["speed"];
-          double delta     = j[1]["steering_angle"]; 		  
-		  double a         = j[1]["throttle"];
-		  
+          double delta     = j[1]["steering_angle"];
+          double a         = j[1]["throttle"];
+          
           // Waypoints TRANSFORM from Global to Car C.S.
-		  Eigen::VectorXd ptsx_car(ptsx.size());
+          Eigen::VectorXd ptsx_car(ptsx.size());
           Eigen::VectorXd ptsy_car(ptsy.size());  
           for (unsigned int i = 0; i < ptsx.size(); i++) {
             double x = ptsx[i] - px;
@@ -103,55 +103,55 @@ int main() {
             ptsx_car[i] = x * cos(-psi) - y * sin(-psi);
             ptsy_car[i] = x * sin(-psi) + y * cos(-psi);
           }
-		  
+          
           // Waypoints 3rd order fit
           auto coeffs = polyfit(ptsx_car, ptsy_car, 3);
 
           const double Lf = 2.67;
-		  
-		  // Latency in milisecs and secs
-		  int latency = 100;
+          
+          // Latency in milisecs and secs
+          int latency = 100;
           const double dt = latency / 1000.0; 
-		  
-		  // TIME = 0 (after transform)
-		  px = 0;
-		  py = 0;
-		  psi = 0;
+          
+          // TIME = 0 (after transform)
+          px = 0;
+          py = 0;
+          psi = 0;
           // CTE = desired_y - actual_y 
-		  //     = polyeval(coeffs, px) - py  
+          //     = polyeval(coeffs, px) - py  
           double cte = polyeval(coeffs, 0); // py = 0 after transform
           // PSI-error = actual psi - desired psi
-		  //           = psi - atan(3*coeffs[3]*px*px+2*coeffs[2]*px+coeffs[1])
-          double epsi = -atan(coeffs[1]); // px = 0 psi=0 after transform		  
+          //           = psi - atan(3*coeffs[3]*px*px+2*coeffs[2]*px+coeffs[1])
+          double epsi = -atan(coeffs[1]); // px = 0 psi=0 after transform         
 
-          // TIME = 0 + LATENCY(dt)	 
+          // TIME = 0 + LATENCY(dt)  
           px   = px + v * cos(psi) * dt;
           py   = py + v * sin(psi) * dt;
           psi  = psi +  v * (-delta) / Lf * dt; //delta is negative, since simulator left turn is negative
-		  epsi = epsi + psi;
-		  cte  = cte + v * sin(epsi) * dt;
-		  v    = v + a * dt;
+          epsi = epsi + psi;
+          cte  = cte + v * sin(epsi) * dt;
+          v    = v + a * dt;
 
           // State values 
           Eigen::VectorXd state(6);
           state << px, py, psi, v, cte, epsi;
-		  
+          
           // Solve for steer and accel actuations
           auto sol = mpc.Solve(state,coeffs);  
-		  double steer_value    = -sol[0] / deg2rad(25); // neg sign because delta positive rotates CCW or turn left
-		  double throttle_value = sol[1];
-		  
+          double steer_value    = -sol[0] / deg2rad(25); // neg sign because delta positive rotates CCW or turn left
+          double throttle_value = sol[1];
+          
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
           msgJson["steering_angle"] = steer_value;
           msgJson["throttle"] = throttle_value;
-		  
+          
           // Display the MPC predicted trajectory by a Green line
-		  // points are in reference to the vehicle's coordinate system
+          // points are in reference to the vehicle's coordinate system
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
-		  for (unsigned int i = 2; i < sol.size(); i+=2) {
+          for (unsigned int i = 2; i < sol.size(); i+=2) {
             mpc_x_vals.push_back(sol[i]);
             mpc_y_vals.push_back(sol[i+1]);
           }
@@ -162,7 +162,7 @@ int main() {
           // points are in reference to the vehicle's coordinate system
           vector<double> next_x_vals;
           vector<double> next_y_vals;
-		  for(int i = 0; i<ptsx_car.size();i++){
+          for(int i = 0; i<ptsx_car.size();i++){
             next_x_vals.push_back(ptsx_car[i]);
             next_y_vals.push_back(ptsy_car[i]);
           }
