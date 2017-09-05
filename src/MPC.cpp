@@ -16,7 +16,7 @@ using CppAD::AD;
 
 // TODO: Set the timestep length and duration
 size_t N  = 10;
-double dt = 0.05;
+double dt = 0.1;
 
 // The solver takes all the state variables and actuator
 // variables in a singular vector. Thus, we should to establish
@@ -41,7 +41,7 @@ size_t a_start = delta_start + N - 1;
 //
 // This is the length from front to CoG that has a similar radius.
 const double Lf = 2.67;
-double ref_v = 40;
+double ref_v = 60*0.44704; //MPH to m/s
 
 class FG_eval {
  public:
