@@ -253,7 +253,7 @@ may extend beyond the 3^rd^ order polynomial assumption for a typical
 lookahead distance. This quantity should proportional to the speed of
 the car.
 
-For the 40MPH case, N=10 and Dt=0.05sec was sufficient enough for the
+For the 60MPH case, N=10 and Dt=0.1sec was sufficient enough for the
 simulation.
 
 ## **PUTTING IT ALL TOGETHER IN A FLOWCHART** ##
@@ -265,9 +265,9 @@ Excel.png](./media/image2.png)
 ## **CONCLUSIONS** ##
 
 -   The MPC was implemented for going around the track at a speed of
-    40MPH. The only constraint weight that was changed was the steer
+    60MPH. The only constraint weight that was changed was the steer
     rate weight, which was set to 500. Also the time horizon was set to
-    10x0.05secs. The car was able to go around the track indefinitely.
+    10x0.1secs. The car was able to go around the track indefinitely.
 
 -   For other speeds, the constraint weights and time horizon variables
     would have to be adjuster..
